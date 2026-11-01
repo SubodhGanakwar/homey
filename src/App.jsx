@@ -6,16 +6,19 @@ const go=h=>{location.hash=h}
 function useHash(){const[h,s]=useState(location.hash.slice(1)||'/');useEffect(()=>{const f=()=>{s(location.hash.slice(1)||'/');scrollTo(0,0)};addEventListener('hashchange',f);return()=>removeEventListener('hashchange',f)},[]);return h}
 const inr=n=>'₹'+Number(n).toLocaleString('en-IN')
 
-function Card({l}){return <a className="card" href={`#/listing/${l.id}`}><span className={'tag '+l.type}>{l.type}</span><h3>{l.title}</h3>
-<div className="mut">{l.area}, {l.distance_km} km from campus</div><div className="chips">{(l.amenities||[]).slice(0,4).map(a=><i key={a}>{a}</i>)}</div><div className="rent">{inr(l.rent)}<small> / month</small></div></a>}
+const ICON={PG:'🏠',Flat:'🏢',Hostel:'🛏️'}
+function Card({l}){return <a className="card" href={`#/listing/${l.id}`}><div className={'banner '+l.type}><span aria-hidden="true">{ICON[l.type]}</span><span className="price">{inr(l.rent)}/mo</span></div>
+<div className="body"><span className={'tag '+l.type}>{l.type}</span><h3>{l.title}</h3><div className="mut">{l.area}, {l.distance_km} km from campus</div><div className="chips">{(l.amenities||[]).slice(0,4).map(a=><i key={a}>{a}</i>)}</div></div></a>}
 
 function Home(){const[q,setQ]=useState('');const[top,setTop]=useState([])
 useEffect(()=>{supabase.from('listings').select('*').order('created_at',{ascending:false}).limit(3).then(({data})=>setTop(data||[]))},[])
 return <>
-<section className="hero"><div><h1>Your first week in a new city, sorted.</h1><p>Find an affordable PG, flat or hostel near your college, and the mess that feeds you, all in one place.</p>
-<form className="search" onSubmit={e=>{e.preventDefault();go('/listings?q='+encodeURIComponent(q))}}><input aria-label="Search area or name" placeholder="Search area, e.g. Karve Nagar" value={q} onChange={e=>setQ(e.target.value)}/><button>Search homes</button></form></div></section>
-<main className="wrap"><h2>How Homey works</h2><div className="steps"><div><h3>Search</h3>Filter by rent, type and distance from campus.</div><div><h3>Check the food</h3>See messes and canteens near each place.</div><div><h3>Ask the owner</h3>Send an enquiry straight to the PG owner.</div></div>
-<h2 style={{marginTop:40}}>Newly listed</h2>{top.length?<div className="grid">{top.map(l=><Card key={l.id} l={l}/>)}</div>:<p className="mut">No listings yet. Owners can add the first one after signing up.</p>}</main></>}
+<section className="hero"><div className="hero-in"><div><h1>Find a home near campus before the semester starts.</h1><p>Affordable PGs, flats and hostels, plus the messes nearby. Ask owners directly, no brokers.</p>
+<form className="search" onSubmit={e=>{e.preventDefault();go('/listings?q='+encodeURIComponent(q))}}><input aria-label="Search area or name" placeholder="Search area, e.g. Karve Nagar" value={q} onChange={e=>setQ(e.target.value)}/><button>Search homes</button></form></div>
+{top[0]&&<div className="tilt"><Card l={top[0]}/></div>}</div></section>
+<main className="wrap"><h2>How Homey works</h2><div className="steps"><div><span className="n">1</span><h3>Search</h3>Filter by rent, type and distance from campus.</div><div><span className="n">2</span><h3>Check the food</h3>See messes and canteens near each place.</div><div><span className="n">3</span><h3>Ask the owner</h3>Send an enquiry straight to the PG owner.</div></div>
+<h2 style={{marginTop:44}}>Newly listed</h2>{top.length?<div className="grid">{top.map(l=><Card key={l.id} l={l}/>)}</div>:<p className="mut">No listings yet. Owners can add the first one after signing up.</p>}
+<div className="band"><div><h2>Own a PG or flat?</h2><p>List it free and get enquiries from students.</p></div><a className="btn sun" href="#/login">List your place</a></div></main></>}
 
 function Listings({params}){const[all,setAll]=useState(null);const[f,setF]=useState({q:params.get('q')||'',type:'',max:'',gender:''})
 useEffect(()=>{supabase.from('listings').select('*').order('rent').then(({data})=>setAll(data||[]))},[])
@@ -87,4 +90,4 @@ useEffect(()=>{if(!user){setProfile(null);return}supabase.from('profiles').selec
 const[path,qs]=hash.split('?');const[,p,id]=path.split('/')
 const logout=async()=>{await supabase.auth.signOut();go('/')}
 return <><nav><a href="#/" className="logo"><span>H</span>omey</a><div><a href="#/listings">Listings</a>{user?<><a href="#/account">{profile?.role==='owner'?'Dashboard':'Account'}</a><a href="#/" onClick={logout}>Log out</a></>:<a href="#/login">Log in</a>}</div></nav>
-{p==='listings'?<Listings params={new URLSearchParams(qs||'')}/>:p==='listing'?<Detail id={id} user={user}/>:p==='login'?<Auth/>:p==='account'?<Account user={user} profile={profile}/>:<Home/>}</>}
+{p==='listings'?<Listings params={new URLSearchParams(qs||'')}/>:p==='listing'?<Detail id={id} user={user}/>:p==='login'?<Auth/>:p==='account'?<Account user={user} profile={profile}/>:<Home/>}<footer><b>Homey</b><span className="mut">Affordable homes and food for freshers.</span></footer></>}
